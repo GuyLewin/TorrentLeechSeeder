@@ -7,10 +7,11 @@ import utils
 
 
 class Torrent(object):
-    def __init__(self, path):
+    def __init__(self, path, save_dir):
         with open(path, "rb") as f:
             torrent_file_content = f.read()
 
+        self.save_dir = save_dir
         self.torrent_file = bencode.bdecode(torrent_file_content)
         self.total_length = 0
         self.piece_length = self.torrent_file['info']['piece length']
@@ -34,7 +35,7 @@ class Torrent(object):
         assert(len(self.file_names) > 0)
 
     def get_files(self):
-        root = self.torrent_file['info']['name']
+        root = os.path.join(self.save_dir, self.torrent_file['info']['name'])
 
         if "files" in self.torrent_file['info']:
             if not os.path.exists(root):

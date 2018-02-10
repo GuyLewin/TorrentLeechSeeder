@@ -9,6 +9,9 @@ import torrentleech_api.torrentleech_api
 
 VERSION = "1.0"
 
+# Setup logger
+logging.basicConfig(level=logging.DEBUG)
+
 
 def _dump_session(session, session_file_path):
     with open(session_file_path, "wb") as session_file:

@@ -25,14 +25,14 @@ class Piece(object):
 
         if self.num_blocks > 1:
             for i in range(self.num_blocks):
-                    self.blocks.append(["Free", BLOCK_SIZE, b"",0])
+                    self.blocks.append(["Free", BLOCK_SIZE, "", 0])
 
             # Last block of last piece, the special block
             if (self.piece_size % BLOCK_SIZE) > 0:
                 self.blocks[self.num_blocks-1][1] = self.piece_size % BLOCK_SIZE
 
         else:
-            self.blocks.append(["Free", int(self.piece_size), b"", 0])
+            self.blocks.append(["Free", int(self.piece_size), "", 0])
 
     def set_block(self, offset, data):
         if not self.finished:

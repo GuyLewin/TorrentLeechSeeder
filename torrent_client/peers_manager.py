@@ -4,7 +4,7 @@ from threading import Thread
 from pubsub import pub
 
 import utils
-import RarestPieces
+import rarest_pieces
 
 
 class PeersManager(Thread):
@@ -14,7 +14,8 @@ class PeersManager(Thread):
         self.unchoked_peers = []
         self.torrent = torrent
         self.pieces_manager = pieces_manager
-        self.rarest_pieces = RarestPieces.RarestPieces(pieces_manager)
+        self.rarest_pieces = rarest_pieces.RarestPieces(pieces_manager)
+        self.seeded = 0
 
         self.pieces_by_peer = []
         for i in range(self.pieces_manager.number_of_pieces):
@@ -109,6 +110,7 @@ class PeersManager(Thread):
         block = self.pieces_manager.get_block(piece_index, block_offset, block_length)
         piece = peer.build_request(self, piece_index, block_offset, block)
         peer.send_to_peer(piece)
+        self.seeded += block_length
 
     @staticmethod
     def handle_message_received(peer):

@@ -1,8 +1,9 @@
-import Piece
 import bitstring
 import logging
 from threading import Thread
 from pubsub import pub
+
+import piece
 
 
 class PiecesManager(Thread):
@@ -41,10 +42,10 @@ class PiecesManager(Thread):
             end = start + 20
 
             if i == (self.number_of_pieces - 1):
-                piece_length = self.torrent.totalLength - (self.number_of_pieces - 1) * self.torrent.pieceLength
-                pieces.append(Piece.Piece(i, piece_length, self.torrent.pieces[start:end]))
+                piece_length = self.torrent.total_length - (self.number_of_pieces - 1) * self.torrent.piece_length
+                pieces.append(piece.Piece(i, piece_length, self.torrent.pieces[start:end]))
             else:
-                pieces.append(Piece.Piece(i, self.torrent.pieceLength, self.torrent.pieces[start:end]))
+                pieces.append(piece.Piece(i, self.torrent.piece_length, self.torrent.pieces[start:end]))
         return pieces
 
     def are_pieces_completed(self):
@@ -61,13 +62,13 @@ class PiecesManager(Thread):
         piece_offset = 0
         piece_size_used = 0
 
-        for f in self.torrent.fileNames:
+        for f in self.torrent.file_names:
             current_size_file = f["length"]
             file_offset = 0
 
             while current_size_file > 0:
-                piece_id = piece_offset / self.torrent.pieceLength
-                piece_size = self.pieces[piece_id].pieceSize - piece_size_used
+                piece_id = piece_offset / self.torrent.piece_length
+                piece_size = self.pieces[piece_id].piece_size - piece_size_used
 
                 if current_size_file - piece_size < 0:
                     f = {

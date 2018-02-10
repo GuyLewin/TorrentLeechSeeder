@@ -1,10 +1,10 @@
 import socket
 import struct
-import bitstring
-from bitstring import BitArray
-from pubsub import pub
-import threading
 import logging
+import bitstring
+import threading
+from pubsub import pub
+from bitstring import BitArray
 
 import utils
 
@@ -143,7 +143,7 @@ class Peer(object):
 
     def unchoke(self, payload=None):
         logging.info('unchoke')
-        pub.sendMessage('PeersManager.peerUnchoked',peer=self)
+        pub.sendMessage('PeersManager.peerUnchoked', peer=self)
         self.state['peer_choking'] = False
 
     def interested(self, payload=None):
@@ -155,27 +155,27 @@ class Peer(object):
         self.state['peer_interested'] = False
 
     def have(self, payload):
-        index = utils.convertBytesToDecimal(payload)
+        index = utils.bytes_to_decimal(payload)
         self.bit_field[index] = True
         pub.sendMessage('RarestPiece.updatePeersBitfield', bitfield=self.bit_field, peer=self)
 
     def bitfield(self, payload):
         self.bit_field = BitArray(bytes=payload)
-        logging.info('request')
+        logging.debug('bitfield')
         pub.sendMessage('RarestPiece.updatePeersBitfield', bitfield=self.bit_field, peer=self)
 
     def request(self, payload):
         piece_index = payload[:4]
         block_offset = payload[4:8]
         block_length = payload[8:]
-        logging.info('request')
-        pub.sendMessage('PiecesManager.PeerRequestsPiece',piece=(piece_index,block_offset,block_length), peer=self)
+        logging.debug('request')
+        pub.sendMessage('PiecesManager.PeerRequestsPiece', piece=(piece_index, block_offset, block_length), peer=self)
 
     def piece(self, payload):
         piece_index = utils.bytes_to_decimal(payload[:4])
         piece_offset = utils.bytes_to_decimal(payload[4:8])
         piece_data = payload[8:]
-        pub.sendMessage('PiecesManager.Piece',piece=(piece_index,piece_offset,piece_data))
+        pub.sendMessage('PiecesManager.Piece', piece=(piece_index, piece_offset, piece_data))
 
     def cancel(self, payload=None):
         logging.info('cancel')

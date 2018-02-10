@@ -14,9 +14,6 @@ PAGE_URL_SUFFIX = "/page/{page_num}"
 INCORRECT_LOGIN_MAGIC = "Invalid Username"
 CAPTCHA_MAGIC = "Maximum login attempts"
 
-# Setup logger
-logging.basicConfig(level=logging.DEBUG)
-
 
 def _parse_torrents_from_url(session, url):
     search_url = TORRENTLEECH_BASE_URL + url

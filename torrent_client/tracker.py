@@ -26,7 +26,7 @@ class Tracker(object):
         self.get_peers_from_trackers()
 
     def get_peers_from_trackers(self):
-        for tracker in self.torrent.announceList:
+        for tracker in self.torrent.announce_list:
             if tracker[0][:4] == "http":
                 t1 = FuncThread(self.scrape_http, self.torrent, tracker[0])
                 self.threads_list.append(t1)
@@ -45,7 +45,7 @@ class Tracker(object):
             'peer_id': torrent.peer_id,
             'uploaded': 0,
             'downloaded': 0,
-            'left': torrent.totalLength,
+            'left': torrent.total_length,
             'event': 'started'
         }
         try:
