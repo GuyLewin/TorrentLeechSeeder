@@ -1,11 +1,9 @@
-import pickle
 import logging
 from bs4 import BeautifulSoup
 import requests
 
 # torrentleech_api
-import utils
-import torrent
+import torrentleechtorrent
 
 
 TORRENTLEECH_BASE_URL = 'https://www.torrentleech.org'
@@ -38,12 +36,12 @@ def _parse_torrents_from_url(session, url):
             logging.debug("Creating torrent (url={url}, size={size}, seeders={seeders}, leechers={leechers})".format(
                 url=url, size=size_str, seeders=seeders, leechers=leechers
             ))
-            torrents.append(torrent.Torrent(url, size_str, seeders, leechers))
+            torrents.append(torrentleechtorrent.TorrentLeechTorrent(url, size_str, seeders, leechers))
 
     return torrents
 
 
-def _get_torrents_by_leechers(session, max_size_bytes, pages):
+def get_top_scored_torrents(session, max_size_bytes, pages):
     torrents = list()
     for page_num in xrange(1, pages + 1):
         logging.info("Scraping page #{}".format(page_num))
@@ -83,8 +81,3 @@ def login(torrentleech_username, torrentleech_password):
                           "Login via your browser and solve the captcha before retrying")
             return None
         return session
-
-
-def get_top_leeched_torrents(session):
-    # Login to TorrentLeech.
-    return _get_torrents_by_leechers(session, 3 * 1024 * 1024 * 1024, 4)

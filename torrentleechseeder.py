@@ -18,16 +18,19 @@ def _dump_session(session, session_file_path):
 def _load_session(session_file_path):
     with open(session_file_path, "rb") as f:
         cookies = requests.utils.cookiejar_from_dict(pickle.load(f))
-        return requests.session(cookies=cookies)
+        session = requests.session()
+        session.cookies = cookies
+        return session
 
 
-def main(torrentleech_username, torrentleech_password, session_file_path, max_size_bytes):
+def get_top_scored_torrents(torrentleech_username, torrentleech_password, session_file_path, max_size_bytes, pages):
     session = None
     if os.path.exists(session_file_path):
         try:
             session = _load_session(session_file_path)
-        except Exception:
+        except Exception, e:
             logging.warning("Failed to load session. Using credentials")
+            logging.debug("Exception: {}".format(str(e)))
     if session is None:
         # Load using credentials
         if torrentleech_username is None:
@@ -39,7 +42,17 @@ def main(torrentleech_username, torrentleech_password, session_file_path, max_si
             return
         logging.info("Successful login! Saving session to {}".format(session_file_path))
         _dump_session(session, session_file_path)
-    torrentleech_api.torrentleech_api.get_top_leeched_torrents(session)
+    return torrentleech_api.torrentleech_api.get_top_scored_torrents(session, max_size_bytes, pages)
+
+
+def main(argparse_args):
+    if argparse_args.username is None and not os.path.exists(argparse_args.session):
+        parser.error("You must specify -u/--username if session file doesn't exist")
+
+    torrents = get_top_scored_torrents(
+        argparse_args.username, argparse_args.password, argparse_args.session, argparse_args.max_size_bytes,
+        argparse_args.pages
+    )
 
 
 if __name__ == "__main__":
@@ -55,9 +68,11 @@ if __name__ == "__main__":
                         help="Maximal size in bytes of a single torrent. Default: 50GB (%(default)d bytes)")
     parser.add_argument("--pages", dest="pages", type=int, default=3,
                         help="Number of pages to scrape TorrentLeech for torrents. Default: %(default)d")
+    parser.add_argument("-d", "--download-dir", dest="download_dir",
+                        help="Where downloaded torrents will be saved")
     args = parser.parse_args()
 
     if args.username is None and not os.path.exists(args.session):
         parser.error("You must specify -u/--username if session file doesn't exist")
 
-    main(args.username, args.password, args.session, args.max_size_bytes)
+    main(args)
