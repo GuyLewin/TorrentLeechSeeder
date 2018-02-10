@@ -1,3 +1,4 @@
+import pickle
 import logging
 from bs4 import BeautifulSoup
 import requests
@@ -9,8 +10,11 @@ import torrent
 
 TORRENTLEECH_BASE_URL = 'https://www.torrentleech.org'
 ORDER_BY_LEECHERS_URL = "/torrents/browse/index/orderby/leechers/order/desc"
+LOGIN_URL = "/user/account/login/"
 PAGE_URL_SUFFIX = "/page/{page_num}"
+
 INCORRECT_LOGIN_MAGIC = "Invalid Username"
+CAPTCHA_MAGIC = "Maximum login attempts"
 
 # Setup logger
 logging.basicConfig(level=logging.DEBUG)
@@ -63,10 +67,9 @@ def _get_torrents_by_leechers(session, max_size_bytes, pages):
     return torrents_smaller_than_max_size
 
 
-def get_top_leeched_torrents(torrentleech_username, torrentleech_password):
-    # Login to TorrentLeech.
+def login(torrentleech_username, torrentleech_password):
     with requests.session() as session:
-        login_result = session.post(TORRENTLEECH_BASE_URL + '/user/account/login/', data={
+        login_result = session.post(TORRENTLEECH_BASE_URL + LOGIN_URL, data={
             'username': torrentleech_username,
             'password': torrentleech_password,
             'remember_me': 'on',
@@ -74,5 +77,14 @@ def get_top_leeched_torrents(torrentleech_username, torrentleech_password):
         })
         if INCORRECT_LOGIN_MAGIC in login_result.content:
             logging.error("Incorrect credentials. Quitting")
-            return
-        return _get_torrents_by_leechers(session, 3 * 1024 * 1024 * 1024, 4)
+            return None
+        elif CAPTCHA_MAGIC in login_result.content:
+            logging.error("Too many incorrect login attempts. "
+                          "Login via your browser and solve the captcha before retrying")
+            return None
+        return session
+
+
+def get_top_leeched_torrents(session):
+    # Login to TorrentLeech.
+    return _get_torrents_by_leechers(session, 3 * 1024 * 1024 * 1024, 4)
