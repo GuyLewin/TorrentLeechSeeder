@@ -16,7 +16,7 @@ class Client(object):
     def __init__(self):
         new_peers_queue = Queue.Queue()
 
-        self.torrent = torrent.Torrent("/Users/guylewin/Downloads/The.Big.Bang.Theory.S11E15.720p.HDTV.x264-AVS.torrent", "/tmp")
+        self.torrent = torrent.Torrent("/Users/guylewin/Downloads/31C62DE92DCF9FF8CE4CC0D77E073C3C1FD9091E.torrent", "/tmp")
         self.tracker = tracker.Tracker(self.torrent, new_peers_queue)
 
         self.peer_seeker = peer_seeker.PeerSeeker(new_peers_queue, self.torrent)
@@ -51,7 +51,7 @@ class Client(object):
                             index, offset, length = data
                             self.peers_manager.request_new_piece(peer, index, offset, length)
 
-                        piece.isComplete()
+                        piece.is_complete()
 
                         for block in piece.blocks:
                             if (int(time.time()) - block[3]) > 8 and block[0] == "Pending":

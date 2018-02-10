@@ -64,7 +64,7 @@ class PeersManager(Thread):
                     continue
 
                 peer.read_buffer += msg
-                self.handle_message_received(peer)
+                PeersManager.handle_message_received(peer)
 
     def start_connection_to_peers(self):
         for peer in self.peers:
@@ -77,9 +77,11 @@ class PeersManager(Thread):
                     self.remove_peer(peer)
 
     def add_peer(self, peer):
+        logging.debug("Peer added")
         self.peers.append(peer)
 
     def add_unchoked_peer(self, peer):
+        logging.debug("Peer unchoked")
         self.unchoked_peers.append(peer)
 
     def remove_peer(self, peer):
@@ -115,7 +117,7 @@ class PeersManager(Thread):
     @staticmethod
     def handle_message_received(peer):
         while len(peer.read_buffer) > 0:
-            if peer.hasHandshaked is False:
+            if peer.has_handshaked is False:
                 peer.check_handshake(peer.read_buffer)
                 return
 

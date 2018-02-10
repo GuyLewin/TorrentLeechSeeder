@@ -41,7 +41,7 @@ class Peer(object):
             9: self.port_request
         }
 
-        self.number_of_pieces = torrent.numberOfPieces
+        self.number_of_pieces = torrent.number_of_pieces
 
         self.bit_field = bitstring.BitArray(self.number_of_pieces)
 

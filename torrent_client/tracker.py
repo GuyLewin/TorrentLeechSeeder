@@ -56,14 +56,18 @@ class Tracker(object):
             pass
 
     def parse_tracker_response(self, tracker_response):
-        tracker_response_struct = "!IH"
-        tracker_response_struct_size = struct.calcsize(tracker_response_struct)
-        data = str(tracker_response)
-        while len(data) > 0:
-            raw_ip, port = struct.unpack(tracker_response_struct, data[:tracker_response_struct_size])
-            ip = socket.inet_ntoa(raw_ip)
+        """
+        I know this function looks bad, but it's because tracker_response is unicode.
+        Trust me, you do not want to use 'struct' here
+        """
+        raw_bytes = [ord(c) for c in tracker_response]
+        for i in range(len(raw_bytes) / 6):
+            start = i * 6
+            end = start + 6
+            ip = ".".join(str(i) for i in raw_bytes[start:end - 2])
+            port = raw_bytes[end - 2:end]
+            port = port[1] + port[0] * 256
             self.new_peers_queue.put([ip, port])
-            data = data[tracker_response_struct_size:]
 
     @staticmethod
     def make_connection_id_request():
