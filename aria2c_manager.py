@@ -23,5 +23,5 @@ class Aria2cManager(object):
 
     def download_torrent(self, torrent_file_path):
         self._running_aria2c_processes.append(subprocess.Popen([
-            self._aria2c_path, "-T", torrent_file_path, "-d", self._download_dir
+            self._aria2c_path, "-T", torrent_file_path, "-d", self._download_dir, "--seed-ratio=0.0"
         ]))

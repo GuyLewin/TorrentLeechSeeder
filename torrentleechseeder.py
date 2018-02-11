@@ -29,10 +29,14 @@ def _load_session(session_file_path):
         return session
 
 
-def _download_torrent_file(torrent_file_url):
-    download_response = requests.get(torrent_file_url)
+def _download_torrent_file(session, torrent_file_url):
+    download_response = session.get(torrent_file_url)
     if download_response.status_code != 200:
-        raise ValueError("Unable to download torrent from {}, status code is {}".format(
+        raise RuntimeError("Unable to download torrent from {}, status code is {}".format(
+            torrent_file_url, download_response.status_code
+        ))
+    if "Access denied" in download_response.content:
+        raise RuntimeError("Access denied while downloading torrent from {}, status code is {}".format(
             torrent_file_url, download_response.status_code
         ))
     torrent_file_save_path = tempfile.mktemp()
@@ -60,11 +64,13 @@ def get_top_scored_torrents(torrentleech_username, torrentleech_password, sessio
             return
         logging.info("Successful login! Saving session to {}".format(session_file_path))
         _dump_session(session, session_file_path)
-    return torrentleech_api.torrentleech_api.get_top_scored_torrents(session, max_size_bytes, pages)
+    return session, torrentleech_api.torrentleech_api.get_top_scored_torrents(session, max_size_bytes, pages)
 
 
-def main(argparse_args):
-    if argparse_args.username is None and not os.path.exists(argparse_args.session):
+def main(parser):
+    args = parser.parse_args()
+
+    if args.username is None and not os.path.exists(args.session):
         parser.error("You must specify -u/--username if session file doesn't exist")
 
     torrent_urls_already_downloaded = set()
@@ -72,16 +78,27 @@ def main(argparse_args):
     download_manager = aria2c_manager.Aria2cManager(args.download_dir, args.download_dir_max_size, args.aria2c_path)
 
     while download_manager.get_space_left() > 0:
-        torrents = get_top_scored_torrents(
-            argparse_args.username, argparse_args.password, argparse_args.session,
-            min(argparse_args.max_size_bytes, download_manager.get_space_left()), argparse_args.pages
+        session, torrents = get_top_scored_torrents(
+            args.username, args.password, args.session,
+            min(args.max_size_bytes, download_manager.get_space_left()), args.pages
         )
 
         for single_torrent in torrents:
             if single_torrent in torrent_urls_already_downloaded:
                 continue
-            download_manager.download_torrent(single_torrent.url)
+            logging.info("Downloading torrent {}".format(single_torrent.url))
+            try:
+                torrent_file_path = _download_torrent_file(session, single_torrent.url)
+            except RuntimeError, e:
+                logging.error("Error while downloading torrent: {}. Skipping".format(str(e)))
+                continue
+            logging.debug("Torrent file saved to {}".format(torrent_file_path))
+            download_manager.download_torrent(torrent_file_path)
             torrent_urls_already_downloaded.add(single_torrent.url)
+            # Let aria2c initialize the directory and create the files, so our size calculations will work
+            time.sleep(10)
+
+        time.sleep(args.interval)
 
 
 if __name__ == "__main__":
@@ -96,18 +113,17 @@ if __name__ == "__main__":
                         default=os.path.join(os.path.expanduser("~"), ".torrentleechseeder_session"),
                         help="Path to session file containing the cookies to TorrentLeech (will be generated "
                              "if first run). Default: %(default)s")
-    parser.add_argument("-m", "--max-size", dest="max_size_bytes", type=int, default=21474836480,
+    parser.add_argument("-m", "--max-size", dest="max_size_bytes", type=int, default=20 * 1024 * 1024 * 1024,
                         help="Maximal size in bytes of a single torrent. Default: 20GB (%(default)d bytes)")
+    parser.add_argument("-i", "--interval", dest="interval", type=int, default=60 * 60 * 24,
+                        help="Time in seconds to sleep between TorrentLeech scraping sessions. "
+                             "Default: 1 day (%(default)d seconds)")
     parser.add_argument("--pages", dest="pages", type=int, default=5,
                         help="Number of pages to scrape TorrentLeech for torrents. Default: %(default)d")
-    parser.add_argument("--download-dir-max-size", default=53687091200, type=int, dest="download_dir_max_size",
+    parser.add_argument("--download-dir-max-size", default=50 * 1024 * 1024 * 1024, type=int, dest="download_dir_max_size",
                         help="Maximal size in bytes all downloads will take altogether. "
                              "Default: 50GB (%(default)d bytes)")
     parser.add_argument("--aria2c-path", default="/usr/bin/aria2c", dest="aria2c_path",
                         help="Path for the aria2c executable used to download and seed torrents. Default: %(default)s")
-    args = parser.parse_args()
 
-    if args.username is None and not os.path.exists(args.session):
-        parser.error("You must specify -u/--username if session file doesn't exist")
-
-    main(args)
+    main(parser)
