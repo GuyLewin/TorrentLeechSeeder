@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 
 # torrentleech_api
-import torrentleechtorrent
+import torrent
 
 
 TORRENTLEECH_BASE_URL = 'https://www.torrentleech.org'
@@ -33,7 +33,7 @@ def _parse_torrents_from_url(session, url):
             logging.debug("Creating torrent (url={url}, size={size}, seeders={seeders}, leechers={leechers})".format(
                 url=url, size=size_str, seeders=seeders, leechers=leechers
             ))
-            torrents.append(torrentleechtorrent.TorrentLeechTorrent(url, size_str, seeders, leechers))
+            torrents.append(torrent.Torrent(url, size_str, seeders, leechers))
 
     return torrents
 

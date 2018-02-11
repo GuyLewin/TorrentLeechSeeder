@@ -4,7 +4,7 @@ Model to contain information about a single TorrentLeech torrent
 import utils
 
 
-class TorrentLeechTorrent(object):
+class Torrent(object):
     def __init__(self, url, size_str, seeders, leechers):
         self.url = url
         self.size_str = size_str
