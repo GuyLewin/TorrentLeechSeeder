@@ -15,4 +15,4 @@ def size_str_to_float(size_str):
     elif size_str.endswith("TB"):
         return size_float * 1024 * 1024 * 1024 * 1024
     else:
-        raise ValueError("Unsupported size string: {}".format(size_str))
+        raise ValueError("Unsupported size string: {0}".format(size_str))

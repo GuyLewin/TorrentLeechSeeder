@@ -41,7 +41,7 @@ def _parse_torrents_from_url(session, url):
 def get_top_scored_torrents(session, max_size_bytes, pages):
     torrents = list()
     for page_num in xrange(1, pages + 1):
-        logging.info("Scraping page #{}".format(page_num))
+        logging.info("Scraping page #{0}".format(page_num))
         url = ORDER_BY_LEECHERS_URL
         if page_num > 1:
             url += PAGE_URL_SUFFIX.format(page_num=page_num)

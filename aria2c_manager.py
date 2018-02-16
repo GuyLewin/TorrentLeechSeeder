@@ -22,6 +22,8 @@ class Aria2cManager(object):
         return self._download_dir_max_size - _dir_size(self._download_dir)
 
     def download_torrent(self, torrent_file_path):
-        self._running_aria2c_processes.append(subprocess.Popen([
+        p = subprocess.Popen([
             self._aria2c_path, "-T", torrent_file_path, "-d", self._download_dir, "--seed-ratio=0.0"
-        ]))
+        ])
+        self._running_aria2c_processes.append(p)
+        return p

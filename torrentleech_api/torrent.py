@@ -14,6 +14,6 @@ class Torrent(object):
         self.score = self.leechers / self.size_bytes / max(1, self.seeders)
 
     def __repr__(self):
-        return "{} | size: {} | seeders: {} | leechers: {} | score: {}".format(
+        return "{0} | size: {0} | seeders: {0} | leechers: {0} | score: {0}".format(
             self.url.split("/")[-1], self.size_str, self.seeders, self.leechers, self.score
         )

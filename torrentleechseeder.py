@@ -16,6 +16,9 @@ VERSION = "1.0"
 logging.basicConfig(level=logging.DEBUG)
 
 
+# TODO: Support continuing downloaded torrents after restarting the script
+# TODO: Kill aria2c + remove torrent data of old torrents
+
 def _dump_session(session, session_file_path):
     with open(session_file_path, "wb") as session_file:
         pickle.dump(requests.utils.dict_from_cookiejar(session.cookies), session_file)
@@ -32,11 +35,11 @@ def _load_session(session_file_path):
 def _download_torrent_file(session, torrent_file_url):
     download_response = session.get(torrent_file_url)
     if download_response.status_code != 200:
-        raise RuntimeError("Unable to download torrent from {}, status code is {}".format(
+        raise RuntimeError("Unable to download torrent from {0}, status code is {1}".format(
             torrent_file_url, download_response.status_code
         ))
     if "Access denied" in download_response.content:
-        raise RuntimeError("Access denied while downloading torrent from {}, status code is {}".format(
+        raise RuntimeError("Access denied while downloading torrent from {0}, status code is {1}".format(
             torrent_file_url, download_response.status_code
         ))
     torrent_file_save_path = tempfile.mktemp()
@@ -52,17 +55,17 @@ def get_top_scored_torrents(torrentleech_username, torrentleech_password, sessio
             session = _load_session(session_file_path)
         except Exception, e:
             logging.warning("Failed to load session. Using credentials")
-            logging.debug("Exception: {}".format(str(e)))
+            logging.debug("Exception: {0}".format(str(e)))
     if session is None:
         # Load using credentials
         if torrentleech_username is None:
             torrentleech_username = raw_input("Username for TorrentLeech: ")
         if torrentleech_password is None:
-            torrentleech_password = getpass.getpass("Password for {}: ".format(torrentleech_username))
+            torrentleech_password = getpass.getpass("Password for {0}: ".format(torrentleech_username))
         session = torrentleech_api.torrentleech_api.login(torrentleech_username, torrentleech_password)
         if session is None:
             return
-        logging.info("Successful login! Saving session to {}".format(session_file_path))
+        logging.info("Successful login! Saving session to {0}".format(session_file_path))
         _dump_session(session, session_file_path)
     return session, torrentleech_api.torrentleech_api.get_top_scored_torrents(session, max_size_bytes, pages)
 
@@ -86,23 +89,28 @@ def main(parser):
         for single_torrent in torrents:
             if single_torrent in torrent_urls_already_downloaded:
                 continue
-            logging.info("Downloading torrent {}".format(single_torrent.url))
+            logging.info("Downloading torrent {0}".format(single_torrent.url))
             try:
                 torrent_file_path = _download_torrent_file(session, single_torrent.url)
             except RuntimeError, e:
-                logging.error("Error while downloading torrent: {}. Skipping".format(str(e)))
+                logging.error("Error while downloading torrent: {0}. Skipping".format(str(e)))
                 continue
-            logging.debug("Torrent file saved to {}".format(torrent_file_path))
-            download_manager.download_torrent(torrent_file_path)
-            torrent_urls_already_downloaded.add(single_torrent.url)
+            logging.debug("Torrent file saved to {0}".format(torrent_file_path))
+            aria2c_process = download_manager.download_torrent(torrent_file_path)
             # Let aria2c initialize the directory and create the files, so our size calculations will work
             time.sleep(10)
+            if aria2c_process.poll() is None:
+                # Process is dead, download probably failed. Try again later
+                os.unlink(torrent_file_path)
+            else:
+                # Don't re-download
+                torrent_urls_already_downloaded.add(single_torrent.url)
 
         time.sleep(args.interval)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="TorrentLeech Seeder, version {}".format(VERSION))
+    parser = argparse.ArgumentParser(description="TorrentLeech Seeder, version {0}".format(VERSION))
     parser.add_argument("-u", "--username", dest="username", default=None,
                         help="Username for TorrentLeech website")
     parser.add_argument("-p", "--password", dest="password", default=None,
